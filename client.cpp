@@ -42,7 +42,8 @@ class cplug
     char buf[4608];
     string strRec;
     sockaddr_in hint;
-    double avg=0;
+    double ram_avg=0;
+    double idle_avg=0;
 
     public:
     int sock;
@@ -72,8 +73,9 @@ class cplug
         }
     }
 
-    int get_ram();
-    int data_to_server();
+    void get_ram();
+    int data_to_server(double);
+    void get_cpu_idle();
 
     ~cplug()
     {
@@ -89,18 +91,22 @@ class cplug
 int main()
 {
     cplug obj;
+    thread th1,th2;
     obj.init_hint_struct();
     if(obj.connect_to_server()==-1)
         exit(0);
-    obj.data_to_server();
-    for(int i=0;i<10;i++)
-        obj.get_ram();
-    obj.data_to_server();
+    for(int i=0;i<200;i++)
+        th1=thread(obj.get_ram);        //Not working
+    for(int i=0;i<200;i++)
+        th2=thread(obj.get_cpu_idle);
+
+//    obj.data_to_server();
+    cout<<"HI FROM main() afete dtatda(); "<<endl;
     return 0;
 }
 
 
-int cplug::get_ram()
+void cplug::get_ram()
 {
     ::count++;
     ifstream ram;
@@ -127,7 +133,7 @@ int cplug::get_ram()
 
     perusage=(used/total)*100;
 
-    avg+=(perusage)/10;
+    ram_avg+=(perusage)/200;
 
     this_thread::sleep_for(chrono::milliseconds(50));
 //    cout<<"Total: "<<total<<endl;
@@ -135,21 +141,21 @@ int cplug::get_ram()
 //    cout<<"Available: "<<ava<<endl;
     cout<<"\033[1;32m % Usage: \033[0m "<<setprecision(4)<<perusage<<" %"<<endl;
     ram.close();
-    if(::count%10==0)
-        cout<<"Average: "<<avg<<" %"<<endl;
+    if(::count%200==0)
+    {
+        cout<<"Average: "<<ram_avg<<" %"<<endl;
+        data_to_server(ram_avg);
+        ram_avg=0;
+    }
 
-    cout<<"\n";
-    return 1;
+//    cout<<"\n";
+//    return 1;
 
 }
 
-int cplug::data_to_server()
+int cplug::data_to_server(double val)
 {
-    string stravg;
-    stravg=to_string(avg);
-    cout<<"STRAVG: "<<stravg.c_str()<<endl;
-
-    if(send(sock,(char*)&stravg,sizeof(stravg),0)==-1)
+    if(send(sock,(double*)&val,sizeof(val),0)==-1)
     {
         cerr<<"\033[1;31m Can't Send! \033[0m"<<endl;
         return -1;
@@ -158,3 +164,37 @@ int cplug::data_to_server()
     return 1;
 }
 
+void cplug::get_cpu_idle()
+{
+    ::count++;
+    ifstream fin;
+//    fin.open("log_iostat.txt");
+    this_thread::sleep_for(chrono::milliseconds(50));
+    system("iostat > log_iostat.txt");
+    fin.open("log_iostat.txt");
+    string line;
+    double cpu_idle;
+    while(fin>>line)
+    {
+        if(line=="0.00")
+        {
+            fin>>cpu_idle;
+            break;
+        }
+    }
+
+    idle_avg+=(100-cpu_idle)/200;
+
+    cout<<(100-cpu_idle)<<" %"<<endl;
+    if(::count%200==0)
+    {
+        cout<<"\033[1;32m AVG: \033[0m"<<setprecision(4)<<idle_avg<<" %";
+        data_to_server(idle_avg);
+        idle_avg=0;
+    }
+
+
+    fin.close();
+
+//    return 1;
+}

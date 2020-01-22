@@ -15,6 +15,8 @@
 #include<string.h>
 #include<arpa/inet.h>
 #include<algorithm>
+#include<chrono>
+#include<thread>
 #include<stdlib.h>
 //#include<jsoncpp/json/json.h>
 #include<json-c/json.h>
@@ -55,7 +57,7 @@ class splug
     {
         hint.sin_family=AF_INET;
         hint.sin_port=htons(54000);
-        inet_pton(AF_INET,"127.0.0.1",&hint.sin_addr);
+        inet_pton(AF_INET,"0.0.0.0",&hint.sin_addr);
         if(bind(listening,(sockaddr*)&hint,sizeof(hint))==-1)
         {
             cerr<<"\033[1;31m Can't bind to IP/PORT\033[0m";
@@ -115,19 +117,24 @@ class splug
 int main()
 {
     system("clear");
-    splug obj;
-    if(obj.bind_socket()==-1)
-        exit(0);
-    if(obj.listen_in()==-1)
-        exit(0);
-    if(obj.accept_call()==-1)
-        exit(0);
-    obj.close_listening();
-    obj.connect_message();
+    while(1)
+    {
+//        system("clear");
+        splug obj;
+        if(obj.bind_socket()==-1)
+            exit(0);
+        if(obj.listen_in()==-1)
+            exit(0);
+        if(obj.accept_call()==-1)
+            exit(0);
+        obj.close_listening();
+        obj.connect_message();
 
-//    json_object *jobj=json_object_new_object();
-//    json_object *jobj=json_object_new_object();
-    obj.data();
+    //    json_object *jobj=json_object_new_object();
+    //    json_object *jobj=json_object_new_object();
+        while(obj.data()==1);
+//        this_thread::sleep_for(chrono::seconds(5));
+    }
 
     return 0;
 }
@@ -135,9 +142,10 @@ int main()
 int splug::data()
 {
 //    memset(buf,0,4096);
-    ram=0;
+    double dram=0;
 
-    bytesRecv=recv(clientSocket,(int*)&ram,sizeof(ram),0);
+    bytesRecv=recv(clientSocket,(double*)&dram,sizeof(dram),0);
+//    cout<<"BYTES: "<<bytesRecv<<endl;
     if(bytesRecv==-1)
     {
         cerr<<"\033[1;31m Can't Recieve \033[0m"<<endl;
@@ -152,7 +160,7 @@ int splug::data()
 
 //    cout<<"Ram usage: "<<string(buf,0,bytesRecv)<<" %"<<endl;
 //    cout<<"Ram usage: "<<string(buf,0,bytesRecv)<<"\b %"<<endl;
-    cout<<"Ram usage: "<<ram<<" %"<<endl;
+    cout<<"Ram usage: "<<dram<<" %"<<endl;
 
     return 1;
 }

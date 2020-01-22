@@ -18,7 +18,7 @@ class cplug
     char buf[4096];
     string userInput;
     sockaddr_in hint;
-    
+
     public:
     cplug()                                                          //Sorted
     {
@@ -26,7 +26,7 @@ class cplug
         if(sock==-1)
             cerr<<" Can't create socket";
     }
-    
+
     void init_hint_struct()                                         //Sorted
     {
         port=54000;
@@ -35,7 +35,7 @@ class cplug
         hint.sin_port=htons(port);
         inet_pton(AF_INET,ipAddress.c_str(),&hint.sin_addr);
     }
-    
+
     int connect_to_server()
     {
         connectRes=connect(sock,(sockaddr*)&hint,sizeof(hint));
@@ -45,9 +45,9 @@ class cplug
             return 1;
         }
     }
-    
+
     void data_to_server();
-    
+
     ~cplug()
     {
         close(sock);
@@ -69,13 +69,14 @@ void cplug::data_to_server()
 {
     while(true)
     {
-
+        double no;
         // Enter lines of text
-        cout<<"> ";
-        getline(cin,userInput);
+        cout<<"> "; cin>>no;
+//        getline(cin,userInput);
 
         // sent to server
-        int sendRes=send(sock,userInput.c_str(),sizeof(userInput)+1,0);             //+1 because we send the /0 also
+//        int sendRes=send(sock,userInput.c_str(),sizeof(userInput)+1,0);             //+1 because we send the /0 also
+        int sendRes=send(sock,(double*)&no,sizeof(no),0);
         if(sendRes==-1)
         {
             cerr<<" Coudnot connect to server ";
@@ -87,6 +88,6 @@ void cplug::data_to_server()
         int bytesRecieved=recv(sock,buf,4096,0);
 
         // display response
-        cout<<"Server> "<<string(buf,bytesRecieved)<<" \r\n";    
+        cout<<"Server> "<<string(buf,bytesRecieved)<<" \r\n";
     }
 }
