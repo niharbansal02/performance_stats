@@ -16,7 +16,7 @@
 #include<arpa/inet.h>
 #include<algorithm>
 #include<stdlib.h>
-//#include<jsoncpp/json/json.h>
+#include<jsoncpp/json/json.h>
 #include<json-c/json.h>
 #define corr "Correct!"
 #define incorrid "Enter correct ID!"
@@ -27,7 +27,6 @@ using namespace std;
 static int count=0;
 
 typedef unsigned int ui;
-
 
 class cplug
 {
@@ -96,10 +95,12 @@ int main()
     if(obj.connect_to_server()==-1)
         exit(0);
     for(int i=0;i<200;i++)
-        th1=thread(obj.get_ram);        //Not working
+        obj.get_ram();
+//        th1=thread(obj.get_ram);        //Not working
     for(int i=0;i<200;i++)
-        th2=thread(obj.get_cpu_idle);
-
+        obj.get_cpu_idle();
+//        th2=thread(obj.get_cpu_idle);
+//    threa
 //    obj.data_to_server();
     cout<<"HI FROM main() afete dtatda(); "<<endl;
     return 0;

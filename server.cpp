@@ -117,6 +117,7 @@ class splug
 int main()
 {
     system("clear");
+    char ch;
     while(1)
     {
 //        system("clear");
