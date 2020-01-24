@@ -16,8 +16,8 @@
 #include<arpa/inet.h>
 #include<algorithm>
 #include<stdlib.h>
-#include<jsoncpp/json/json.h>
-#include<json-c/json.h>
+#include"json_maker.cpp"
+
 #define corr "Correct!"
 #define incorrid "Enter correct ID!"
 #define incorrpass "Enter correct Password!"
@@ -43,6 +43,7 @@ class cplug
     sockaddr_in hint;
     double ram_avg=0;
     double idle_avg=0;
+    char Main[500];
 
     public:
     int sock;
@@ -51,8 +52,14 @@ class cplug
         sock=socket(AF_INET,SOCK_STREAM,0);
         if(sock==-1)
             cerr<<"\033[1;31mCan't create socket\033[0m";
+
+        strcat(Main,"{ ");
     }
 
+    void print_json()
+    {
+        cout<<Main<<endl;
+    }
     void init_hint_struct()                                         //Sorted
     {
         port=54000;
@@ -72,19 +79,25 @@ class cplug
         }
     }
 
+    void complete_json()
+    {
+        strcat(Main," }");
+    }
     void get_ram();
-    int data_to_server(double);
+    int data_to_server();       //There is some prblm in sending data
+                                //Check data types
+                                //Check end pts
+                                //Check documentation
+                                //Check Socket/
     void get_cpu_idle();
 
     ~cplug()
     {
         int exitsignal=100;
-        send(sock,(int *)&exitsignal,sizeof(exitsignal),0);
+//        send(sock,(int *)&exitsignal,sizeof(exitsignal),0);
         close(sock);
     }
 };
-
-
 
 
 int main()
@@ -94,15 +107,18 @@ int main()
     obj.init_hint_struct();
     if(obj.connect_to_server()==-1)
         exit(0);
-    for(int i=0;i<200;i++)
+    for(int i=0;i<20;i++)
         obj.get_ram();
 //        th1=thread(obj.get_ram);        //Not working
-    for(int i=0;i<200;i++)
+    for(int i=0;i<20;i++)
         obj.get_cpu_idle();
 //        th2=thread(obj.get_cpu_idle);
 //    threa
-//    obj.data_to_server();
-    cout<<"HI FROM main() afete dtatda(); "<<endl;
+    obj.complete_json();
+//    obj.print_json();
+    obj.data_to_server();
+
+    cout<<endl<<" MAIN(): "<<endl;
     return 0;
 }
 
@@ -129,7 +145,7 @@ void cplug::get_ram()
             ram>>ava;
     }
 
-    totFree=ava+free;
+    totFree=ava;
     used=total-totFree;
 
     perusage=(used/total)*100;
@@ -142,11 +158,13 @@ void cplug::get_ram()
 //    cout<<"Available: "<<ava<<endl;
     cout<<"\033[1;32m % Usage: \033[0m "<<setprecision(4)<<perusage<<" %"<<endl;
     ram.close();
-    if(::count%200==0)
+    if(::count%20==0)
     {
         cout<<"Average: "<<ram_avg<<" %"<<endl;
-        data_to_server(ram_avg);
+        maker(Main,GET_VARIABLE_NAME(ram_avg),ram_avg);
+//        data_to_server(ram_avg);                              //!
         ram_avg=0;
+        ::count=0;
     }
 
 //    cout<<"\n";
@@ -154,9 +172,10 @@ void cplug::get_ram()
 
 }
 
-int cplug::data_to_server(double val)
+int cplug::data_to_server()
 {
-    if(send(sock,(double*)&val,sizeof(val),0)==-1)
+    int sendRes=send(sock,(const char*)&Main,sizeof(Main),0);
+    if(sendRes==-1)
     {
         cerr<<"\033[1;31m Can't Send! \033[0m"<<endl;
         return -1;
@@ -187,10 +206,11 @@ void cplug::get_cpu_idle()
     idle_avg+=(100-cpu_idle)/200;
 
     cout<<(100-cpu_idle)<<" %"<<endl;
-    if(::count%200==0)
+    if(::count%20==0)
     {
-        cout<<"\033[1;32m AVG: \033[0m"<<setprecision(4)<<idle_avg<<" %";
-        data_to_server(idle_avg);
+        cout<<"\033[1;32m AVG: \033[0m"<<setprecision(4)<<idle_avg<<" %"<<endl;
+        maker(Main,GET_VARIABLE_NAME(idle_avg),idle_avg,stop);
+//        data_to_server(idle_avg);
         idle_avg=0;
     }
 
