@@ -18,18 +18,17 @@
 #include<chrono>
 #include<thread>
 #include<stdlib.h>
-//#include<jsoncpp/json/json.h>
-//#include<json-c/json.h>
 //#include"josn_parser.cpp"
+#include"dbms.cpp"
 #define corr "Correct!"
 #define incorrid "Enter correct ID!"
 #define incorrpass "Enter correct Password!"
 #define def "Please enter correct choice!"
 
 using namespace std;
-
+int count=0;
 #define ignore cin.ignore(numeric_limits<streamsize>::max(),'\n')
-class splug
+class splug : public dbms
 {
     int listening;
     sockaddr_in hint,client;
@@ -40,6 +39,11 @@ class splug
     int result;
     int ram;
     int idbuf;
+    struct info
+    {
+        double ram,io,cpu;
+    }mem;
+
     char buf[4096];
     char passbuf[8];
     char MAINstr[500];
@@ -50,6 +54,7 @@ class splug
     int dec=1;
     splug()
     {
+        ::count++;
         listening=socket(AF_INET,SOCK_STREAM,0);
         if(listening==-1)
             cerr<<"\033[1;31m Can't create socket.\033[0m ";
@@ -110,6 +115,12 @@ class splug
 
     int data();
 
+    int data_to_dbms()
+    {
+        int sno=::count%51;
+        update(mem.ram,mem.cpu,mem.io,sno);
+    }
+
     int parser()
     {
         ofstream fout("JSON_txt.json");
@@ -120,11 +131,6 @@ class splug
     //    cout<<fin.is_open();
         string line;
         int len;
-
-        struct info
-        {
-            double ram,io,cpu;
-        }mem;
 
         int location=0;
 
@@ -153,47 +159,18 @@ class splug
             }
 
             //Get IO
-    //        else if(line=="\"io\"")
-    //        {
-    //            location=fin.tellg();
-    //            fin.seekg(location+3);
-    //            fin>>mem.io;
-    //        }
+            else if(line=="\"io_avg\"")
+            {
+                location=fin.tellg();
+                fin.seekg(location+3);
+                fin>>mem.io;
+            }
         }
 
         cout<<endl<<"RAM: "<<mem.ram<<endl;
         cout<<"CPU: "<<mem.cpu<<endl;
-    //    cout<<"IO: "<<mem.io<<endl;
+        cout<<"IO: "<<mem.io<<endl;
 
-    //    string b[10];
-    //    char sram[30];
-    //    char ssram[30];
-    //
-    //    if(Main[0]!='{')
-    //    {
-    //        cerr<<"error";
-    //        return -1;
-    //    }
-    //
-    //    for(int i=0;Main[i]!='\0';i++)
-    //    {
-    //        if(Main[i]=='\"')
-    //        {
-    //            for(int k=0,j=i+1;Main[j]!='\"';j++,k++)
-    //            {
-    //                sram[k]=Main[j];
-    //            }
-    ////            break;
-    //        }
-    //        if(Main[i]==':')
-    //        {
-    //            for(int k=0,j=i+1;Main[j]!=',';j++,k++)
-    //                ssram[k]=Main[j];
-    //            break;
-    //        }
-    //    }
-    //    cout<<sram<<endl;
-    //    cout<<ssram<<endl;
         fin.close();
         return 1;
     }
@@ -226,7 +203,7 @@ int main()
     //    json_object *jobj=json_object_new_object();
         while(obj.data()==1);
 //        obj.parser();
-
+        obj.data_to_dbms();
 //        this_thread::sleep_for(chrono::seconds(5));
     }
 
