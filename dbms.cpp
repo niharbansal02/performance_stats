@@ -1,4 +1,6 @@
 #include<sqlite3.h>
+//#include<iostream>
+//#include<string.h>
 
 using namespace std;
 class dbms
@@ -68,3 +70,13 @@ class dbms
         obj.update(ram,cpu,io,sno);
     */
 
+//    int main()
+//    {
+//        int i=0;
+//        dbms obj;
+//        for(;i<=50;i++)
+//        obj.update(0,0,0,i);
+//
+//        return 0;
+//    }
+//

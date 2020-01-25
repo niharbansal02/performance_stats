@@ -22,9 +22,13 @@
 #define incorrid "Enter correct ID!"
 #define incorrpass "Enter correct Password!"
 #define def "Please enter correct choice!"
+#define ENTRIES 60
+#define DELAY 50
+#define SENDTIME 2000
 
+int itr=SENDTIME/DELAY;
 using namespace std;
-static int count=0;
+static long long count=0;
 
 typedef unsigned int ui;
 
@@ -54,7 +58,7 @@ class cplug
         if(sock==-1)
             cerr<<"\033[1;31mCan't create socket\033[0m";
 
-        strcat(Main,"{ ");
+//        strcpy(Main,"{ ");
     }
 
     void print_json()
@@ -94,7 +98,7 @@ class cplug
 
     ~cplug()
     {
-        int exitsignal=100;
+//        int exitsignal=100;
 //        send(sock,(int *)&exitsignal,sizeof(exitsignal),0);
         close(sock);
     }
@@ -104,22 +108,29 @@ class cplug
 int main()
 {
     cplug obj;
-    thread th1,th2;
+//    thread th1,th2;
+//for(int i=0;i<60;i++){
     obj.init_hint_struct();
+//    for(int k=0;k<60;k++){
     if(obj.connect_to_server()==-1)
         exit(0);
-    for(int i=0;i<200;i++)
-        obj.get_ram();
-//        th1=thread(obj.get_ram);        //Not working
-    for(int i=0;i<200;i++)
-        obj.get_cpu_idle_io();
-//        th2=thread(obj.get_cpu_idle);
-//    threa
-    obj.complete_json();
-//    obj.print_json();
-    obj.data_to_server();
 
-    cout<<endl<<" MAIN(): "<<endl;
+    for(int k=0;k<ENTRIES;k++)
+    {
+        for(int i=0;i<itr;i++)               //change
+            obj.get_ram();
+//        th1=thread(obj.get_ram);        //Not working
+        for(int i=0;i<itr;i++)               //change
+            obj.get_cpu_idle_io();
+//        th2=thread(obj.get_cpu_idle);
+
+        obj.complete_json();
+        obj.print_json();
+        obj.data_to_server();
+
+        cout<<endl<<" MAIN(): "<<endl;
+
+    }
     return 0;
 }
 
@@ -151,21 +162,19 @@ void cplug::get_ram()
 
     perusage=(used/total)*100;
 
-    ram_avg+=(perusage)/200;
+    ram_avg+=(perusage)/itr;         //change
 
-    this_thread::sleep_for(chrono::milliseconds(50));
-//    cout<<"Total: "<<total<<endl;
-//    cout<<"Free: "<<free<<endl;
-//    cout<<"Available: "<<ava<<endl;
-    cout<<"\033[1;32m % Usage: \033[0m "<<setprecision(4)<<perusage<<" %"<<endl;
+    this_thread::sleep_for(chrono::milliseconds(DELAY));
+//    cout<<"\033[1;32m % Usage: \033[0m "<<setprecision(4)<<perusage<<" %"<<endl;
     ram.close();
-    if(::count%200==0)
+    if(::count%itr==0)           //change
     {
-        cout<<"Average: "<<ram_avg<<" %"<<endl;
+//        cout<<"Average: "<<ram_avg<<" %"<<endl;
+        strcpy(Main,"{ ");
         maker(Main,GET_VARIABLE_NAME(ram_avg),ram_avg);
 //        data_to_server(ram_avg);                              //!
         ram_avg=0;
-        ::count=0;
+//        ::count=0;
     }
 
 //    cout<<"\n";
@@ -178,7 +187,7 @@ int cplug::data_to_server()
     int sendRes=send(sock,(const char*)&Main,sizeof(Main),0);
     if(sendRes==-1)
     {
-        cerr<<"\033[1;31m Can't Send! \033[0m"<<endl;
+//        cerr<<"\033[1;31m Can't Send! \033[0m"<<endl;
         return -1;
     }
 
@@ -190,7 +199,7 @@ void cplug::get_cpu_idle_io()
     ::count++;
     ifstream fin;
 //    fin.open("log_iostat.txt");
-    this_thread::sleep_for(chrono::milliseconds(50));
+    this_thread::sleep_for(chrono::milliseconds(DELAY));
     system("iostat > log_iostat.txt");
     fin.open("log_iostat.txt");
     string line;
@@ -209,16 +218,16 @@ void cplug::get_cpu_idle_io()
         }
     }
 
-    idle_avg+=(100-cpu_idle)/200;
-    io_avg+=io/200;
+    idle_avg+=(100-cpu_idle)/itr;            //change
+    io_avg+=io/itr;                          //change
 
-    cout<<(100-cpu_idle)<<" %"<<endl;
-    cout<<io<<" %"<<endl;
-    if(::count%200==0)
+//    cout<<(100-cpu_idle)<<" %"<<endl;
+//    cout<<io<<" %"<<endl;
+    if(::count%itr==0)                   //change
     {
-        cout<<"\033[1;32m AVG: \033[0m"<<setprecision(4)<<idle_avg<<" %"<<endl;
+//        cout<<"\033[1;32m AVG: \033[0m"<<setprecision(4)<<idle_avg<<" %"<<endl;
         maker(Main,GET_VARIABLE_NAME(idle_avg),idle_avg);
-        cout<<"\033[1;32m AVG: \033[0m"<<setprecision(4)<<io_avg<<" %"<<endl;
+//        cout<<"\033[1;32m AVG: \033[0m"<<setprecision(4)<<io_avg<<" %"<<endl;
         maker(Main,GET_VARIABLE_NAME(io_avg),io_avg,stop);
         idle_avg=0;
         io_avg=0;

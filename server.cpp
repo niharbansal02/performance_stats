@@ -54,7 +54,8 @@ class splug : public dbms
     int dec=1;
     splug()
     {
-        ::count++;
+//        ::count++;
+        memset(MAINstr,0,500);
         listening=socket(AF_INET,SOCK_STREAM,0);
         if(listening==-1)
             cerr<<"\033[1;31m Can't create socket.\033[0m ";
@@ -79,6 +80,7 @@ class splug : public dbms
             cerr<<"\033[1;31m Can't listen!\033[0m";
             return -1;
         }
+//        cout<<"listening"<<endl;
     }
 
     int accept_call()
@@ -90,6 +92,7 @@ class splug : public dbms
             cerr<<"\033[1;31m Problem with client connecting!\033[0m";
             return -1;
         }
+//        cout<<"accept call"<<endl;
     }
 
     void close_listening()
@@ -97,6 +100,7 @@ class splug : public dbms
         close(listening);
         memset(host,0,NI_MAXHOST);                                      //Cleanup of host
         memset(svc,0,NI_MAXSERV);
+//        cout<<"close listening"<<endl;
     }
 
     void connect_message()
@@ -117,13 +121,21 @@ class splug : public dbms
 
     int data_to_dbms()
     {
-        int sno=::count%51;
+        int sno;
+        if(::count%50==0)
+            sno=50;
+        else
+            sno=::count%50;
+        cout<<"E: "<<sno<<endl;
         update(mem.ram,mem.cpu,mem.io,sno);
     }
 
     int parser()
     {
-        ofstream fout("JSON_txt.json");
+        ofstream fout;
+
+        fout.open("JSON_txt.json");
+//        fout.seekp(0);
         fout<<MAINstr;
         fout.close();
 
@@ -186,9 +198,10 @@ int main()
 {
     system("clear");
     char ch;
+
+//        system("clear");
     while(1)
     {
-//        system("clear");
         splug obj;
         if(obj.bind_socket()==-1)
             exit(0);
@@ -199,12 +212,11 @@ int main()
         obj.close_listening();
         obj.connect_message();
 
-    //    json_object *jobj=json_object_new_object();
-    //    json_object *jobj=json_object_new_object();
-        while(obj.data()==1);
-//        obj.parser();
-        obj.data_to_dbms();
-//        this_thread::sleep_for(chrono::seconds(5));
+        while(obj.data()==1)
+        {
+            ::count++;
+            obj.data_to_dbms();
+        }
     }
 
     return 0;
@@ -239,8 +251,9 @@ int main()
 int splug::data()
 {
     memset(MAINstr,0,500);
+//    strcpy(MAINstr,"0");
     bytesRecv=recv(clientSocket,MAINstr,sizeof(MAINstr),0);
-//    cout<<"BYTES: "<<bytesRecv<<endl;
+
 
     if(bytesRecv==-1)
     {

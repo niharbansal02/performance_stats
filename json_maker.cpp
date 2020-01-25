@@ -30,9 +30,8 @@ void maker(char Main[],string varName,double strval,int flag)
 
     strcat(Main," : ");
 
-//    strcat(Main,"\"");
     strcat(Main,to_string(strval).c_str());
-//    strcat(Main,"\"");
+
     if(flag==1)
         strcat(Main,", ");
 
