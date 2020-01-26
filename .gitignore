@@ -2,5 +2,5 @@ a.out
 test.*
 *.tmp
 test
-log_iostat.txt
-JSON_txt.json
+log_iostat.txt 
+JSON_txt.json 
