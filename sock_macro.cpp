@@ -20,7 +20,7 @@
 #define ignore cin.ignore(numeric_limits<streamsize>::max(),'\n')
 #define ENTRIES 60
 #define DELAY 50
-#define SENDTIME 1000
+#define SENDTIME 10000
 
 using namespace std;
 
