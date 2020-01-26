@@ -1,11 +1,11 @@
 Linux 5.2.0-kali2-amd64 (kali) 	01/26/2020 	_x86_64_	(4 CPU)
 
 avg-cpu:  %user   %nice %system %iowait  %steal   %idle
-          11.86    0.01    3.32    0.33    0.00   84.48
+          12.15    0.01    3.29    0.40    0.00   84.14
 
 Device             tps    kB_read/s    kB_wrtn/s    kB_dscd/s    kB_read    kB_wrtn    kB_dscd
-loop0             7.79         7.86         0.00         0.00     241605          0          0
-sda               0.04         1.91         0.00         0.00      58808          0          0
-sdb               2.83        26.26        25.93         0.00     807189     797268          0
+loop0             7.59         7.65         0.00         0.00     241759          0          0
+sda               0.04         1.86         0.00         0.00      58808          0          0
+sdb               2.90        25.70        28.32         0.00     812001     894772          0
 
 
