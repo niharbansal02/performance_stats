@@ -110,12 +110,20 @@ class cplug
 
     void runMultiThread()
     {
+
+//        async(launch::async,get_ram);
         thread t1(&cplug::get_ram,this);
+//        async(launch::async,get_cpu_idle_io);
         thread t2(&cplug::get_cpu_idle_io,this);
+//        async(launch::async,avg_each);
         thread t3(&cplug::avg_each,this);
+//        if(::count%itr==0)
+
         t1.join();
         t2.join();
         t3.join();
+
+
     }
 
     void get_cpu_idle_io()

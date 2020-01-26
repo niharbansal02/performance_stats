@@ -105,7 +105,8 @@ class splug : public dbms
         }
 
         cout<<MAINstr<<endl;
-        parser();
+        if(parser()==-1)
+            return -1;
 
         return 1;
     }
