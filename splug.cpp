@@ -1,5 +1,6 @@
-#define ignore cin.ignore(numeric_limits<streamsize>::max(),'\n')
-class splug
+int counts=0;
+
+class splug : public dbms
 {
     int listening;
     sockaddr_in hint,client;
@@ -9,15 +10,21 @@ class splug
     int clientSocket;
     int result;
     int idbuf;
+    struct info
+    {
+        double ram,io,cpu;
+    }mem;
+
     char buf[4096];
-    char passbuf[8];
+    char MAINstr[500];
     int bytesRecv;
-    string getString;                           //Test var.
 
     public:
     int dec=1;
     splug()
     {
+//        ::counts++;
+        memset(MAINstr,0,500);
         listening=socket(AF_INET,SOCK_STREAM,0);
         if(listening==-1)
             cerr<<"\033[1;31m Can't create socket.\033[0m ";
@@ -35,168 +42,6 @@ class splug
         }
     }
 
-    int ticket_read()
-    {
-        int location,tno,age;
-        char sex1[2];
-        ifstream fin;
-        ofstream fout;
-        int pnr;
-        bytesRecv=recv(clientSocket,(int *)&pnr,sizeof(pnr),0);     //FINE
-        string strPNR;
-        strPNR=to_string(pnr);
-        string spnr;
-        int flag=-1;
-
-        fin.open("ticket.txt",ios::binary);
-        while(!fin.eof())
-        {
-            fin>>spnr;
-            if(spnr==strPNR)
-            {
-                flag=0;
-                break;
-            }
-        }
-
-        int aadf=1;
-        if(flag==-1)
-        {
-            send(clientSocket,(int *)&flag,sizeof(flag),0);
-            return -1;
-        }
-        else
-        {
-            send(clientSocket,(int *)&aadf,sizeof(aadf),0);
-            location=fin.tellg();
-            location++;             //Location is the start of TNO
-
-            //*Get tno
-            fin.seekg(location);
-            fin>>tno;
-//            cout<<"Train no.: "<<tno<<endl;
-            send(clientSocket,(int*)&tno,sizeof(tno),0);
-
-            //* Get from
-            fin.seekg(location+6);
-            char from[11];
-            fin>>from;
-//            cout<<"From: ";
-            send(clientSocket,from,sizeof(from),0);
-
-//            for(int i=0;i<11;i++)
-//            {
-//                if(from[i]=='0')
-//                    cout<<" ";
-//                else
-//                    cout<<from[i];
-//            }
-//            cout<<endl;
-
-            //*Get to
-            char to[11];
-            fin>>to;
-//            cout<<"To: ";
-            send(clientSocket,to,sizeof(to),0);
-//            for(int i=0;i<11;i++)
-//            {
-//                if(to[i]=='0')
-//                    cout<<" ";
-//                else
-//                    cout<<to[i];
-//            }
-//            cout<<endl;
-
-            //*Get no. of psgr
-            fin.close();
-//            fin.open("ticket.txt",ios::binary);
-//            int psgrno;
-//            fin.seekg(location+28);
-//            fin>>psgrno;
-//            cout<<psgrno;
-//            fin.close();
-//            send(clientSocket,(int*)&psgrno,sizeof(psgrno),0);
-//            //* Get coach
-//            for(int i=0;i<psgrno;i++)
-//            {
-//                fin.open("ticket.txt",ios::binary|ios::in);
-//                fin.seekg(location+30+(42*i));
-//                char coach[4];
-//                fin.getline(coach,4);
-////                cout<<coach<<"\t\t\t\t\t";
-//                send(clientSocket,coach,sizeof(coach),0);
-//                fin.close();
-//            }
-////            cout<<endl;
-//
-//            //* Get Name
-//            for(int i=0;i<psgrno;i++)
-//            {
-//                fin.open("ticket.txt",ios::binary);
-//                fin.seekg(location+36+(42*i));
-//                char name1[31];
-//                fin.getline(name1,31);
-//                send(clientSocket,name1,sizeof(name1),0);
-////                for(int j=0;j<31;j++)
-////                {
-////                    if(name1[j]=='0')
-////                        name1[j]=' ';
-////                }
-////                cout<<"NAME: "<<name1<<"\t";
-//                fin.close();
-//            }
-//
-////            cout<<endl;
-//
-//            //* Get Age
-//            for(int i=0;i<psgrno;i++)
-//            {
-//                fin.open("ticket.txt",ios::binary);
-//                fin.seekg(location+67+(42*i));
-//                int age1;
-//                fin>>age1;
-//                send(clientSocket,(int *)&age1,sizeof(age),0);
-////                cout<<"Age: "<<age1<<" yrs.\t\t\t\t";
-//                fin.close();
-//            }
-//
-////            cout<<endl;
-//
-//            //* Get sex
-//            for(int i=0;i<psgrno;i++)
-//            {
-//                fin.open("ticket.txt",ios::binary);
-//                fin.seekg(location+70+(42*i));
-//                fin>>sex1;
-//                send(clientSocket,sex1,sizeof(sex1),0);
-////                cout<<"Sex: "<<sex1<<"\t\t\t\t\t";
-//                fin.close();
-//            }
-//
-////            cout<<endl;
-//            //? TODO: Get date of jpurney
-//            //* Get Distance
-//            int dis;
-//            fin.open("ticket.txt",ios::in|ios::binary);
-//            fin.seekg(location+114);
-//            fin>>dis;
-//            send(clientSocket,(int*)&dis,sizeof(dis),0);
-////            cout<<"Distance: "<<dis<<" km"<<endl;
-//
-//            //* Get Fare
-//            int cost;
-//            fin.seekg(location+118);
-//            fin>>cost;
-//            send(clientSocket,(int*)&cost,sizeof(cost),0);
-////            cout<<"Fare: ₹"<<cost<<endl;
-
-        }
-
-
-
-    }
-
-
     int listen_in()
     {
         if(listen(listening,SOMAXCONN)==-1)
@@ -204,6 +49,7 @@ class splug
             cerr<<"\033[1;31m Can't listen!\033[0m";
             return -1;
         }
+//        cout<<"listening"<<endl;
     }
 
     int accept_call()
@@ -215,6 +61,7 @@ class splug
             cerr<<"\033[1;31m Problem with client connecting!\033[0m";
             return -1;
         }
+//        cout<<"accept call"<<endl;
     }
 
     void close_listening()
@@ -222,6 +69,7 @@ class splug
         close(listening);
         memset(host,0,NI_MAXHOST);                                      //Cleanup of host
         memset(svc,0,NI_MAXSERV);
+//        cout<<"close listening"<<endl;
     }
 
     void connect_message()
@@ -238,240 +86,115 @@ class splug
         }
     }
 
-    void data();
+    int data()
+    {
+        memset(MAINstr,0,500);
+    //    strcpy(MAINstr,"0");
+        bytesRecv=recv(clientSocket,MAINstr,sizeof(MAINstr),0);
+
+
+        if(bytesRecv==-1)
+        {
+            cerr<<"\033[1;31m Can't Recieve \033[0m"<<endl;
+            return -1;
+        }
+        else if(bytesRecv==0)
+        {
+            cerr<<"\033[1;31m Client disconnected. \033[0m"<<endl;
+            return -1;
+        }
+
+        cout<<MAINstr<<endl;
+        parser();
+
+        return 1;
+    }
+
+    int data_to_dbms()
+    {
+        int sno;
+        if(::counts%50==0)
+            sno=50;
+        else
+            sno=::counts%50;
+        cout<<"E: "<<sno<<endl;
+        update(mem.ram,mem.cpu,mem.io,sno);
+    }
+
+    int parser()
+    {
+        ofstream fout;
+
+        fout.open("JSON_txt.json");
+//        fout.seekp(0);
+        fout<<MAINstr;
+        fout.close();
+
+        ifstream fin("JSON_txt.json");
+    //    cout<<fin.is_open();
+        string line;
+        int len;
+
+        int location=0;
+
+        fin>>line;
+        if(line!="{")
+        {
+            cerr<<"\033[1;31m Invalid \033[0m JSON obj "<<endl;
+            return -1;
+        }
+        fin.seekg(0);
+        getline(fin,line);
+        len=strlen(line.c_str());
+        fin.seekg(len-1);
+        fin>>line;
+        if(line!="}")
+        {
+            cerr<<"\033[1;31m Invalid \033[0m JSON obj "<<endl;
+            return -1;
+        }
+        fin.seekg(1);
+        while(fin>>line)
+        {
+//            len=strlen(line.c_str());
+
+            //Get RAM
+            if(line=="\"ram_avg\"")
+            {
+                location=fin.tellg();
+                fin.seekg(location+3);
+                fin>>mem.ram;
+            }
+
+            //Get CPU
+            else if(line=="\"idle_avg\"")
+            {
+                location=fin.tellg();
+                fin.seekg(location+3);
+                fin>>mem.cpu;
+            }
+
+            //Get IO
+            else if(line=="\"io_avg\"")
+            {
+                location=fin.tellg();
+                fin.seekg(location+3);
+                fin>>mem.io;
+            }
+        }
+
+        cout<<endl<<"RAM: "<<mem.ram<<endl;
+        cout<<"CPU: "<<mem.cpu<<endl;
+        cout<<"IO: "<<mem.io<<endl;
+
+        fin.close();
+        return 1;
+    }
+
 
     ~splug()
     {
         close(clientSocket);
     }
 };
-
-/*
-
-string encrypt(string &pass)
-    {
-        for(int i=0;pass[i]!='\0';i++)
-        {
-            pass[i]=pass[i]+(i+1);
-        }
-        return pass;
-    }
-
-    string decrypt(string epass)
-    {
-    string dpass;
-        for(int i=0;epass[i]!='\0';i++)
-        {
-            epass[i]=(epass[i])-(i+1);
-        }
-        return epass;
-    }
-
-
-*/
-
-
-
-
-/*
-
-    int id_to_client()
-    {
-        //Clear the buffer
-        idbuf=0;
-
-        // Wait for message
-        bytesRecv=recv(clientSocket,(int *)&idbuf,sizeof(idbuf),0);            //recv() function recieves data from client
-        //recv(socket,variable to store,size of variable,flags)
-
-        if(bytesRecv==-1)
-        {
-            cerr<<"\033[1;31mThere was a connection issue\033[0m"<<endl;
-            return -1;
-            exit(0);
-        }
-        else if(bytesRecv==0)
-        {
-            cout<<"\033[1;31mThe client disconnected\033[0m"<<endl;
-            return -1;
-            exit(0);
-        }
-
-        ifstream fin;
-        fin.open("id.txt",ios::binary);
-        if(!fin.is_open())
-        {
-            cerr<<"\033[1;31m Error opening id file! \033[0m;";
-            return -1;
-            exit(0);
-        }
-
-        int compid;
-        fin>>compid;
-        fin.close();
-
-        //Displady message
-        if(idbuf==compid)
-        {
-            cout<<"\033[1;32mClient: "<<idbuf<<"\033[0m"<<endl;
-            send(clientSocket,corr,sizeof(corr),0);
-        }
-        else
-        {
-            cout<<"\033[1;31mClient: "<<idbuf<<"\033[0m"<<endl;
-            send(clientSocket,incorrid,sizeof(incorrid),0);
-        }
-        return 1;
-    }
-
-    int pass_to_client()
-    {
-
-        //Clear the buffer
-        //memset(buf,0,4096);
-        strcpy(buf,"0");
-        string str;
-        // Wait for message
-        bytesRecv=recv(clientSocket,buf,4096,0);            //recv() function recieves data from client
-        //recv(socket,variable to store,size of variable,flags)
-
-        if(bytesRecv==-1)
-        {
-            cerr<<"\033[1;31mThere was a connection issue\033[0m"<<endl;
-            return -1;
-        }
-        else if(bytesRecv==0)
-        {
-            cout<<"\033[1;31mThe client disconnected\033[0m"<<endl;
-            return -1;
-        }
-
-        str=string(buf,bytesRecv);
-
-        //* Get pass from file
-        ifstream fin;
-        fin.open("pass.txt",ios::binary);
-        if(!fin.is_open())
-        {
-            cerr<<"\033[1;31m Error opening pass file! \033[0m;";
-            return -1;
-            exit(0);
-        }
-        // char compPass[8];
-        string copass;
-        fin>>copass;
-        // fin>>compPass;                  //This is working fine!
-        fin.close();
-        //Displady message
-        if(strcmp(copass.c_str(),str.c_str())==0)
-        {
-            cout<<"\033[1;32mClient: "<<str<<"\033[0m"<<endl;
-            send(clientSocket,corr,sizeof(corr),0);
-        }
-        else
-        {
-            cout<<"\033[1;31mClient: "<<str<<"\033[0m"<<endl;
-            send(clientSocket,incorrpass,sizeof(incorrpass),0);
-        }
-        return 1;
-    }
-
-    int edit_pass()
-    {
-        //MEMSET
-        strcpy(passbuf,"0");
-
-        //Wait for message
-        bytesRecv=recv(clientSocket,passbuf,sizeof(passbuf),0);
-
-        cout<<"\033[1;33m"<<passbuf<<"\033[0m"<<endl;           //remove it later
-
-        if(bytesRecv==-1)
-        {
-            cerr<<"\033[1;31mThere was a connection issue\033[0m"<<endl;
-            return -1;
-            exit(0);
-        }
-        else if(bytesRecv==0)
-        {
-            cout<<"\033[1;31mThe client disconnected\033[0m"<<endl;
-            return -1;
-            exit(0);
-
-        }
-
-        fstream fout;
-        fout.open("pass.txt",ios::binary|ios::out);
-        if(!fout.is_open())
-        {
-            cerr<<"\033[1;31m Error opening pass file! \033[0m;";
-            return -1;
-            exit(0);
-        }
-        fout<<passbuf;
-        fout.close();
-
-        fstream fin;
-        fin.open("pass.txt",ios::in|ios::binary);
-        if(!fin.is_open())
-        {
-            cerr<<"\n \033[1;31mError changing password!\n Contact dev. \033[0m"<<endl;
-            exit(0);
-        }
-
-        char conf[8];
-        fin>>conf;
-        if(strcmp(conf,passbuf)==0)
-        {
-            if(send(clientSocket,corr,sizeof(corr),0)==-1)
-            {
-                cerr<<"\n \033[1;31mSending error!! \033[0m";
-                return -1;
-            }
-        }
-        else
-        {
-            send(clientSocket,incorrid,sizeof(incorrid),0);
-            cerr<<"\n \033[1;31mError changing password!\n Contact dev. \033[0m"<<endl;
-            return -1;
-            exit(0);
-        }
-
-        fout.close();
-        return 0;
-    }
-
-    int decider()
-    {
-        int buffer;
-        buffer=0;
-        bytesRecv=recv(clientSocket,(int*)&buffer,sizeof(buffer),0);
-        if(bytesRecv==-1)
-        {
-            cerr<<"\033[1;31mThere was a connection issue\033[0m"<<endl;
-            dec=-1;
-            return -1;
-        }
-        else if(bytesRecv==0)
-        {
-            cout<<"\033[1;31mThe client disconnected\033[0m"<<endl;
-            dec=-1;
-            return -1;
-        }
-
-        switch(buffer)
-        {
-            case 1: dec=id_to_client();
-                    break;
-            case 2: dec=pass_to_client();
-                    break;
-            case 3: dec=edit_pass();
-                    break;
-            case 4: ticket_read();                    //Edit this
-                    break;
-            case 100:   dec=-1;
-                        return -1;
-            default: cerr<<"\033[1;33mWaithing for message...\033[0m"<<endl;
-        }
-    }*/
 
