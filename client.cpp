@@ -7,34 +7,19 @@ int main()
     cplug obj;
     unsigned long extraTime=0;
     double extraTime2=0;
-    unsigned long correction2=0;
 
     obj.init_hint_struct();
 
     if(obj.connect_to_server()==-1)
         exit(0);
 
-    for(int k=0;k<5;k++)
+    for(int k=0;k<12;k++)
     {
         auto start=chrono::system_clock::now();
         for(int i=0;i<itr;i++)
         {
-            auto beg=chrono::system_clock::now();
-            this_thread::sleep_for(chrono::microseconds(50000-extraTime-correction2));
+            ::count++;
             obj.runMultiThread();
-
-            if(i==itr-1)
-            {
-                obj.complete_json();
-                obj.print_json();
-                obj.data_to_server();
-            }
-            auto endc=chrono::system_clock::now();
-
-            chrono::duration<double> elapsed_time=endc-beg;
-            elapsed_time*=1000000;
-            extraTime=abs((elapsed_time.count()-50000));
-//            cout<<extraTime<<endl;
         }
 
         auto endw=chrono::system_clock::now();

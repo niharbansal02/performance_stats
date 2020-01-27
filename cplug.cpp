@@ -1,3 +1,5 @@
+unsigned long correction2=0;
+
 class cplug
 {
     int sock;
@@ -12,6 +14,8 @@ class cplug
     double idle_avg=0,cpu_idle;
     double io_avg=0,io;
     char Main[500];
+
+    long correctionR=0,correctionIOC=0,correctionS=0;
 
     public:
 
@@ -54,13 +58,14 @@ class cplug
     void avg_each()
     {
         ram_avg+=perusage/itr;
-        idle_avg+=(100-cpu_idle)/itr;            //change
+        idle_avg+=(100-cpu_idle)/itr;
         io_avg+=io/itr;
     }
 
     void get_ram()
     {
-        ::count++;
+        auto start=chrono::system_clock::now();
+        this_thread::sleep_for(chrono::microseconds(50000-correctionR-correction2));
         ifstream ram;
         string line;
         ram.open("/proc/meminfo");
@@ -79,57 +84,73 @@ class cplug
             else if(line=="MemAvailable:")
                 ram>>ava;
         }
-
+        ram.close();
         totFree=ava;
         used=total-totFree;
 
         perusage=(used/total)*100;
 
-//      cout<<"\033[1;32m % Usage: \033[0m "<<setprecision(4)<<perusage<<" %"<<endl;
-        ram.close();
-        if(::count%itr==0)
+//        cout<<"\033[1;32m % Usage: \033[0m "<<setprecision(4)<<perusage<<" %"<<endl;
+        if(::count%(itr-1)==0)
         {
-//          cout<<"Average: "<<ram_avg<<" %"<<endl;
+//            cout<<"Average: "<<ram_avg<<" %"<<endl;
             strcpy(Main,"{ ");
             maker(Main,GET_VARIABLE_NAME(ram_avg),ram_avg);
             ram_avg=0;
         }
+        auto endr=chrono::system_clock::now();
+        chrono::duration<double> elapsed_time=endr-start;
+        elapsed_time*=1000000;
+        correctionR=abs(elapsed_time.count()-50000);
+//        cout<<"\033[1;32m"<<correctionR/1000<<"\033[0m"<<endl;
     }
 
     int data_to_server()
     {
+        complete_json();
+        print_json();
+        auto start=chrono::system_clock::now();
+//        this_thread::sleep_for(chrono::microseconds(10000000-correctionS));
+
         int sendRes=send(sock,(const char*)&Main,sizeof(Main),0);
         if(sendRes==-1)
         {
             cerr<<"\033[1;31m Can't Send! \033[0m"<<endl;
             return -1;
         }
+        auto ends=chrono::system_clock::now();
+        chrono::duration<double> elapsed_time=ends-start;
+        elapsed_time*=1000000;
+        correctionS=(elapsed_time.count()-10000000);
 
         return 1;
     }
 
     void runMultiThread()
     {
+        future<int> send4;
 
-//        async(launch::async,get_ram);
-        thread t1(&cplug::get_ram,this);
-//        async(launch::async,get_cpu_idle_io);
-        thread t2(&cplug::get_cpu_idle_io,this);
-//        async(launch::async,avg_each);
-        thread t3(&cplug::avg_each,this);
-//        if(::count%itr==0)
+        future<void> ram1=async(launch::async,&cplug::get_ram,this);
+        future<void> ioc2=async(launch::async,&cplug::get_cpu_idle_io,this);
+        future<void> avg3=async(launch::async,&cplug::avg_each,this);
 
-        t1.join();
-        t2.join();
-        t3.join();
+        if(::count%200==0)
+            send4=async(launch::async,&cplug::data_to_server,this);
 
+        ram1.get();
+        ioc2.get();
+        avg3.get();
 
+        if(::count%200==0)
+            send4.get();
     }
 
     void get_cpu_idle_io()
     {
-        ifstream fin;
+        auto beg=chrono::system_clock::now();
+        this_thread::sleep_for(chrono::microseconds(50000-correctionIOC-correction2));
         system("iostat > log_iostat.txt");
+        ifstream fin;
         fin.open("log_iostat.txt");
         string line;
         double dump;
@@ -147,10 +168,10 @@ class cplug
             }
         }
 
-//      cout<<(100-cpu_idle)<<" %"<<endl;
-//      cout<<io<<" %"<<endl;
+//      cout<<"\033[1;33m"<<(100-cpu_idle)<<" %"<<"\033[0m"<<endl;
+//      cout<<"\033[1;33m"<<io<<" %"<<"\033[0m"<<endl;
 
-        if(::count%itr==0)
+        if(::count%(itr-1)==0)
         {
     //      cout<<"\033[1;32m AVG: \033[0m"<<setprecision(4)<<idle_avg<<" %"<<endl;
             maker(Main,GET_VARIABLE_NAME(idle_avg),idle_avg);
@@ -159,8 +180,11 @@ class cplug
             idle_avg=0;
             io_avg=0;
         }
-
         fin.close();
+        auto endr=chrono::system_clock::now();
+        chrono::duration<double> elapsed_time=endr-beg;
+        elapsed_time*=1000000;
+        correctionIOC=abs((elapsed_time.count()-50000));
     }
 
     ~cplug()
