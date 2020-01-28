@@ -19,7 +19,7 @@ int main()
         for(int i=0;i<itr;i++)
         {
             ::count++;
-            obj.runMultiThread();
+            obj.runAsync();
         }
 
         auto endw=chrono::system_clock::now();

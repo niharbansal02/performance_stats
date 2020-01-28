@@ -126,7 +126,7 @@ class cplug
         return 1;
     }
 
-    void runMultiThread()
+    void runAsync()
     {
         future<int> send4;
 
